@@ -1,0 +1,12 @@
+[
+    {
+        "won": true,
+        "attempts": 4,
+        "word": "flame"
+    },
+    {
+        "won": true,
+        "attempts": 3,
+        "word": "whale"
+    }
+]
