@@ -1,53 +1,46 @@
-import json
 from pathlib import Path
-
+import json
 class GameHistory:
-    def __init__(self,filename: str="history.json")->None:
+    def __init__(self,filename):
         self.filename=Path(filename)
-        self.games: list[dict[str,object]]=[]
+        self.games:list[dict[str,object]]=[]
         self._load()
 
-    def _load(self)->None:
+    def _save(self):
+            with self.filename.open("w") as file:
+                json.dump(self.games,file,indent=2)
+
+    def _load(self):
         if not self.filename.exists():
             self._save()
-            return 
+            return
         try:
-            with self.filename.open("r") as file:
-                data=json.load(file)
-            if not isinstance(data,list):
-                raise ValueError("Invalid history file format")
-            self.games=data
-        except (json.JSONDecodeError, OSError) as error:
-            raise ValueError(f"Failed to load history file: {error}") from error
+            with self.filename.open("r") as f:
+                self.games=json.load(f)
+        except (json.JSONDecodeError, OSError):
+            self.games=[]
 
-    def _save(self)->None:
-        with self.filename.open("w") as file:
-            json.dump(self.games,file,indent=4)
-    def record_game(self,won:bool,attempts:int,word:str)->None:
-        game={
-            "won":won,
-            "attempts":attempts,
-            "word":word
-        }
+    def add_games(self,won:bool,attempts:int, word:str):
+        game={"won":won,"attempts":attempts,"word":word}
         self.games.append(game)
         self._save()
 
     @property
-    def total_games(self)->int:
+    def total_games(self):
         return len(self.games)
 
     @property
-    def total_wins(self)->int:
-        return sum(1 for game in self.games if game["won"])
+    def total_wins(self):
+        return sum(game["won"] for game in self.games)
 
     @property
-    def win_percentage(self)->float:
+    def win_percentage(self):
         if self.total_games==0:
-            return 0.0
+            return 0
         return (self.total_wins/self.total_games)*100
 
     @property
-    def current_streak(self)->int:
+    def current_streak(self):
         streak=0
         for game in reversed(self.games):
             if game["won"]:
@@ -57,14 +50,16 @@ class GameHistory:
         return streak
 
     @property
-    def best_streak(self)->int:
-        best_streak=0
+    def max_streak(self):
+        max_streak=0
         current_streak=0
         for game in self.games:
             if game["won"]:
                 current_streak+=1
-                best_streak=max(best_streak,current_streak)
+                max_streak=max(max_streak,current_streak)
             else:
                 current_streak=0
-        return best_streak
+        return max_streak
+    
+    
 

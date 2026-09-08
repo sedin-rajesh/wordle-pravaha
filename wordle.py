@@ -1,64 +1,50 @@
-import random 
 from pathlib import Path
-from game import Game,MAX_GUESSES,WORD_LENGTH
+import random
+from game import  Game, MAX_GUESSES, WORD_LENGTH
 from history import GameHistory
 
-WORDS_FILE=Path(__file__).parent/"words.txt"
+word_file=Path(__file__).parent/"words.txt"
+game_history_file=Path(__file__).parent/"game_history.json"
 
-def load_words(filename: Path)->list[str]:
+def load_words(filename):
     words=[]
     with filename.open("r") as file:
-        for line_number,line in enumerate(file,start=1):
-            word=line.strip().lower()
-            if not word:
-                continue
-            if len(word)!=WORD_LENGTH:
-                raise ValueError(f"Invalid word length at line {line_number}: '{word}'")
-            if not word.isalpha():
-                raise ValueError(f"Invalid word at line {line_number}: '{word}'")
-            words.append(word)
-    if not words:
-        raise ValueError("No valid words found in the file")
+        for line in file:
+            word=line.strip()
+            if len(word)==WORD_LENGTH:
+                words.append(word)
     return words
 
-def print_stats(history: GameHistory)->None:
-    print()
-    print("Game Statistics:")
-    print("----------------")
-    print(f"Total games played: {history.total_games}")
-    print(f"Total wins: {history.total_wins}")
-    print(f"Win percentage: {history.win_percentage:.2f}%")
-    print(f"Current streak: {history.current_streak}")
-    print(f"Best streak: {history.best_streak}")
+secret=random.choice(load_words(word_file))
 
-def main()->None:
-    words=load_words(WORDS_FILE)
-    secret=random.choice(words)
-    history=GameHistory()
-    game=Game(secret,words)
-
+def main():
+    game=Game(secret,load_words(word_file))
+    game_history=GameHistory(game_history_file)
     print("Welcome to Wordle!")
-    print(f"You have {MAX_GUESSES} attempts to guess the {WORD_LENGTH}-letter word.")
-
+    print("You have 6 attempts to guess the secret 5-letter word.")
     while not game.is_over:
-        print(game)
-        guess=input("Enter your guess: ").strip().lower()
+        guess=input("Enter your guess: ").lower()
         try:
-            game.make_guess(guess)
-        except ValueError as error:
-            print(f"Error: {error}")
+            result=game.make_guess(guess)
+            print(result)
+        except ValueError as e:
+            print(e)
             continue
     print(game)
     attempts=len(game.guesses)
-    print()
+
     if game.is_won:
         print(f"Congratulations! You guessed the word '{secret}' in {attempts} attempts.")
-        history.record_game(won=True,attempts=attempts,word=secret)
+        game_history.add_games(won=True,attempts=attempts,word=secret)
     else:
-        print(f"Game over! The word was '{secret}'.")
-        history.record_game(won=False,attempts=attempts,word=secret)
+        print(f"Sorry, you did not guess the word. The secret word was '{secret}'.")
+        game_history.add_games(won=False,attempts=attempts,word=secret)
 
-    print_stats(history)
+    print(f"Total games played: {game_history.total_games}")
+    print(f"Total wins: {game_history.total_wins}")
+    print(f"Win percentage: {game_history.win_percentage:.2f}%")
+    print(f"Current winning streak: {game_history.current_streak}")
+    print(f"Maximum winning streak: {game_history.max_streak}")
 
 if __name__=="__main__":
     main()
